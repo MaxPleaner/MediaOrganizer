@@ -1,6 +1,3 @@
-- if true
-  = "Keywords: #{MiniExiftool.new(@item.path).keywords}"
-
 form action='/item/#{@item.id}/update' method="POST"
   input type='hidden' value='#{@item.id}'
   - if @from_tag
@@ -17,8 +14,12 @@ form action='/item/#{@item.id}/update' method="POST"
   input type='submit' value='update'
 br
 
-
 - if @item
-  img src="/item/#{@item.id}" height="700px"
+  - case @item.media_type
+  - when "video"
+    video controls='true' src="/item/#{@item.id}" height="700px"
+  - else
+    img src="/item/#{@item.id}" height="700px"
+    
 - else
   b No more images :(

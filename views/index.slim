@@ -1,11 +1,16 @@
+h1 style='font-style: italic; color: green' Media Organizer
+
 p
-	a href='/untagged' Untagged
+	a class='big-button' href='/undirty_all' = "Write metadata (#{Item.where(dirty: true).count} dirty items)"
 p
-	a href='/all' All items
+	a class='big-button' href='/all' All items
 p
-	a href='/gifs' Gifs
-	
-ul style='list-style: none'
+	a class='big-button' href='/untagged' Untagged
+	  
+
+button type='button' class='big-button collapsible' Tags
+.content
+  ul style='list-style: none'
   - @tags.each do |tag|
-    li style='display: inline-block; border: 1px solid black; padding: 5px; margin: 5px;'
-      a href='/tag/#{tag.name}' = tag.name  
+    li class='tag-link'
+      a class='tag-link-text' href='/tag/#{tag.name}' = tag.name  

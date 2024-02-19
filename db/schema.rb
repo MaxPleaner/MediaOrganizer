@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_18_202944) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_19_202352) do
   create_table "collections", force: :cascade do |t|
     t.string "name"
   end
@@ -18,6 +18,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_18_202944) do
   create_table "items", force: :cascade do |t|
     t.string "path"
     t.text "phash"
+    t.boolean "dirty", default: false
+    t.string "media_type"
   end
 
   create_table "items_collections", force: :cascade do |t|

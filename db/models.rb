@@ -7,12 +7,77 @@ class Item < ActiveRecord::Base
   has_many :tags, through: :items_tags
   has_many :collections, through: :items_collections
   
+  def self.import_file(path, update_tags: false, calc_phash: true)
+    parts = path.split("/")
+	return if parts.last == ".DS_Store"
+	return if parts.last.start_with?(".")
+	return if !File.exist?(path) || File.symlink?(path)
+    
+    item = Item.find_by(path: path)
+    exists = !!item
+    item ||= Item.create(path: path)
+    item.set_type
+    
+    # avoid sending large files to phash or exiftool
+    # since things can freeze up (and timeout won't even handle)
+    return if size_mb(item.path) > 50
+    
+    item.create_tags if (!exists || update_tags)
+    item.set_phash if calc_phash rescue nil
+  end
+  
+  def self.size_mb(path)
+    File.size(path).to_f / (1024 * 1024)
+  end
+  
+  MEDIA_TYPES = ["image", "gif", "video", "other"]
+  
+  def set_type(force_update: false)
+    return if media_type && !force_update
+    val = case File.extname(path).downcase
+    when ".jpg", ".jpeg", ".svg", ".png", "webp"
+		"image"
+	when ".gif", "webm"
+		"gif"
+	when ".avi", "mp4", ".mkv", ".m4v", ".mov"
+		"video"
+	else
+		"other"
+	end
+	update(media_type: val)
+  end
+  
+  def create_tags
+    keywords = []
+	Timeout.timeout(10) do
+		exif = MiniExiftool.new(path) rescue nil
+		keywords = [*exif&.keywords]
+    end rescue puts("#{path} took too long in exiftool")
+	tags = keywords.map do |keyword|
+	  Tag.find_or_create_by(name: keyword)
+	end
+	tags.each do |tag|
+	  items_tags.find_or_create_by(tag: tag)
+	end
+  end
+  
+  def set_phash(force_update: false)
+    return if phash && !force_update
+    hash = nil
+    Timeout.timeout(10) do
+      hash = ImageHash.new(path).hash
+    end rescue puts("#{path} took too long in phash")
+    update(phash: hash)
+  end  
+  
   def write_metadata
+    reload
 	exiftool = MiniExiftool.new(path)
-	tag_names = reload.tags.pluck(:name)
+	tag_names = tags.pluck(:name)
 	tag_names = nil if tag_names.empty?
 	exiftool.keywords = tag_names
-	exiftool.save  
+	exiftool.save
+	update(dirty: false) if dirty
   end
 end
 
@@ -30,10 +95,10 @@ class ItemsTag < ActiveRecord::Base
   belongs_to :item
   belongs_to :tag
   
-  # after_commit :write_metadata, on: [:create, :destroy, :update]
+  after_commit :mark_item_dirty, on: [:create, :destroy, :update]
   
-  def write_metadata
-    item.write_metadata
+  def mark_item_dirty
+    item.update(dirty: true) unless item.dirty
   end
 end
 

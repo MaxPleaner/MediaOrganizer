@@ -12,14 +12,23 @@ get '/' do
   slim :index
 end
 
+get '/undirty_all' do
+  Scripts.undirty_all
+  redirect back
+end
+
 def standard_image_loader(collection, &blk)
-  @count = collection.count
   if params[:random] == 'true'
     @idx = rand(@count)
-    return redirect request.path + "?idx=#{@idx}"
+    return redirect request.path + "?idx=#{@idx}&media_type=#{params[:media_type]}"
   else
     @idx = params[:idx].presence.to_i || 0
   end
+  if params[:media_type].present?
+    @media_type = params[:media_type]
+    collection = collection.where(media_type: params[:media_type])
+  end
+  @count = collection.count
   @item = collection.limit(1).offset(@idx).first
   @tags = @item.tags
   @collections = @item.collections
@@ -38,12 +47,6 @@ get '/all' do
   end
 end
 
-get '/gifs' do
-  standard_image_loader(Item.where("path LIKE ?", "%.gif")) do
-    slim :gifs
-  end
-end
-
 get '/tag/:name' do
   @tag = Tag.find_by_name(params[:name])
   standard_image_loader(@tag.items) do
@@ -59,22 +62,28 @@ end
 post '/item/:id/update' do
   @item = Item.find(params[:id])
   tag_names = params[:tags].split(" ").reject(&:blank?).map(&:strip)
-  tag_names.each do |tag_name|
-    tag = Tag.find_or_create_by(name: tag_name)
-    @item.tags += [tag] unless @item.tags.exists?(name: tag_name)
-  end
-  ItemsTag.transaction do
-    @item.tags.each do |tag|
-      unless tag_names.include?(tag.name)
-        @item.items_tags.find_by(tag: tag).destroy
-        unless ItemsTag.exists?(tag: tag)
-          tag.destroy
+  tags_changed = @item.tags.pluck(:name).sort != tag_names.sort
+
+  if tags_changed
+    tag_names.each do |tag_name|
+      tag = Tag.find_or_create_by(name: tag_name)
+      @item.tags += [tag] unless @item.tags.exists?(name: tag_name)
+    end
+    ItemsTag.transaction do
+      @item.tags.each do |tag|
+        unless tag_names.include?(tag.name)
+          @item.items_tags.find_by(tag: tag).destroy
+          unless ItemsTag.exists?(tag: tag)
+            tag.destroy
+          end
         end
       end
     end
+    @item.update(dirty: true)
   end
-  @item.write_metadata
+
   collections = params[:collections].split("\n").reject(&:blank?).map(&:strip)
+  
   if params[:from_tag].present? && !Tag.exists?(name: params[:from_tag])
     redirect '/'
   else
