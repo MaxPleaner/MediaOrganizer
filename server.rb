@@ -9,6 +9,7 @@ end
 
 get '/' do
   @tags = Tag.all.sort_by { |tag| tag.name.downcase }
+  @collections = Collection.all.sort_by { |collection| collection.name.downcase }
   slim :index
 end
 
@@ -18,17 +19,17 @@ get '/undirty_all' do
 end
 
 def standard_image_loader(collection, &blk)
-  if params[:random] == 'true'
-    @idx = rand(@count)
-    return redirect request.path + "?idx=#{@idx}&media_type=#{params[:media_type]}"
-  else
-    @idx = params[:idx].presence.to_i || 0
-  end
   if params[:media_type].present?
     @media_type = params[:media_type]
     collection = collection.where(media_type: params[:media_type])
   end
   @count = collection.count
+  if params[:random] == 'true'
+    @idx = rand(@count.to_i)
+    return redirect request.path + "?idx=#{@idx}&media_type=#{params[:media_type]}"
+  else
+    @idx = params[:idx].presence.to_i || 0
+  end
   @item = collection.limit(1).offset(@idx).first
   @tags = @item.tags
   @collections = @item.collections
@@ -38,6 +39,12 @@ end
 get '/untagged' do
   standard_image_loader(Item.left_outer_joins(:items_tags).where(items_tags: { id: nil })) do
     slim :untagged
+  end
+end
+
+get '/no_collection' do
+  standard_image_loader(Item.left_outer_joins(:items_collections).where(items_collections: { id: nil })) do
+    slim :no_collection
   end
 end
 
@@ -54,6 +61,13 @@ get '/tag/:name' do
   end
 end
 
+get '/collection/:id' do
+  @collection = Collection.find(params[:id])
+  standard_image_loader(@collection.items) do
+    slim :collection
+  end
+end
+
 get '/item/:id' do
   @item = Item.find(params[:id])
   send_file @item.path
@@ -67,7 +81,7 @@ post '/item/:id/update' do
   if tags_changed
     tag_names.each do |tag_name|
       tag = Tag.find_or_create_by(name: tag_name)
-      @item.tags += [tag] unless @item.tags.exists?(name: tag_name)
+      @item.tags += [tag] unless @item.items_tags.exists?(tag: tag)
     end
     ItemsTag.transaction do
       @item.tags.each do |tag|
@@ -82,9 +96,23 @@ post '/item/:id/update' do
     @item.update(dirty: true)
   end
 
-  collections = params[:collections].split("\n").reject(&:blank?).map(&:strip)
+  collection_names = params[:collections].split("\n").reject(&:blank?).map(&:strip)
+  collection_names.each do |collection_name|
+    collection = Collection.find_or_create_by(name: collection_name)
+    @item.collections += [collection] unless @item.items_collections.exists?(collection: collection)
+  end
+  @item.collections.each do |collection|
+    unless collection_names.include?(collection.name)
+      @item.items_collections.find_by(collection: collection).destroy
+      unless ItemsCollection.exists?(collection: collection)
+        collection.destroy
+      end
+    end
+  end
   
   if params[:from_tag].present? && !Tag.exists?(name: params[:from_tag])
+    redirect '/'
+  elsif params[:from_collection].present? && !Collection.exists?(id: params[:from_collection])
     redirect '/'
   else
     redirect back

@@ -2,6 +2,8 @@ form action='/item/#{@item.id}/update' method="POST"
   input type='hidden' value='#{@item.id}'
   - if @from_tag
     input type='hidden' name='from_tag' value='#{@tag.name}'
+  - if @from_collection
+    input type='hidden' name='from_collection' value='#{@collection.id}'    
   label for='tags-field' Tags
   br
   input id='tags-field' type='text' name='tags' value=@tags.pluck(:name).join(" ")
@@ -23,3 +25,13 @@ br
     
 - else
   b No more images :(
+
+javascript:
+  document.addEventListener('keypress', function(event) {
+    if (event.key == "]") {
+      document.querySelector("#next").click()
+    }
+    if (event.key == "[") {
+      document.querySelector("#prev").click()
+    }    
+  });

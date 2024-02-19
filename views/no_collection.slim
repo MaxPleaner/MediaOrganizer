@@ -1,0 +1,19 @@
+a style='margin-right: 10px' href='/' root
+a id="prev" style='margin-right: 10px' href="/no_collection?idx=#{@idx == 0 ? @count - 1 : @idx - 1}&media_type=#{@media_type}" prev
+a id="next" style='margin-right: 10px' href="/no_collection?idx=#{@idx == @count - 1 ? 0 : @idx + 1}&media_type=#{@media_type}" next
+a style='margin-right: 10px' href="/no_collection?random=true&media_type=#{@media_type}" random
+
+form style='display: inline' action='/no_collection' method="GET"
+  input type='hidden' name='idx' value=@idx
+  select name='media_type'
+    - ([""] + Item::MEDIA_TYPES).each do |media_type|
+      option{
+        value=media_type
+        selected=(@media_type == media_type)
+      } = media_type.presence || "No filter"
+  input type='submit' value='Filter'
+
+pre = "No Collection\nitem #{@idx + 1} (total: #{@count})\n#{@item.path}"
+
+== slim :_item
+
