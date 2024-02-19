@@ -1,0 +1,24 @@
+- if true
+  = "Keywords: #{MiniExiftool.new(@item.path).keywords}"
+
+form action='/item/#{@item.id}/update' method="POST"
+  input type='hidden' value='#{@item.id}'
+  - if @from_tag
+    input type='hidden' name='from_tag' value='#{@tag.name}'
+  label for='tags-field' Tags
+  br
+  input id='tags-field' type='text' name='tags' value=@tags.pluck(:name).join(" ")
+  br
+  label for='collections-field' Collections
+  br
+  textarea id='collections-field' name='collections'
+    = @collections.pluck(:name).join("\n")
+  br
+  input type='submit' value='update'
+br
+
+
+- if @item
+  img src="/item/#{@item.id}" height="700px"
+- else
+  b No more images :(

@@ -1,0 +1,11 @@
+p
+	a href='/untagged' Untagged
+p
+	a href='/all' All items
+p
+	a href='/gifs' Gifs
+	
+ul style='list-style: none'
+  - @tags.each do |tag|
+    li style='display: inline-block; border: 1px solid black; padding: 5px; margin: 5px;'
+      a href='/tag/#{tag.name}' = tag.name  
