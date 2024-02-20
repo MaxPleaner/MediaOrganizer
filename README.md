@@ -48,11 +48,8 @@ files around the drive right now.
 3. Install ruby deps: `bundle install`
 4. create the database: `bundle exec rake db:create`
 5. create the tables: `bundle exec rake db:migrate`
-6. Import your files
-  a. First run `irb -r './server.rb'` to open a REPL
-  b. Then run `Scripts.import_files("/path/to/folder")`
-  c. This will take a while if you have a lot of media, but it will show you progress as it goes.
-7. run the server (this will use port 9292): `rackup --host 0.0.0.0`
+6. Import your files: First run `irb -r './server.rb'` to open a REPL. Then run `Scripts.import_files("/path/to/folder")`. This will take a while if you have a lot of media, but it will show you progress as it goes.
+8. run the server (this will use port 9292): `rackup --host 0.0.0.0`
 
 ## Notes:
 
