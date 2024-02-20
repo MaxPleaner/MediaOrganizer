@@ -1,19 +1,68 @@
-form action='/item/#{@item.id}/update' method="POST"
-  input type='hidden' value='#{@item.id}'
-  - if @from_tag
-    input type='hidden' name='from_tag' value='#{@tag.name}'
-  - if @from_collection
-    input type='hidden' name='from_collection' value='#{@collection.id}'    
-  label for='tags-field' Tags
-  br
-  input id='tags-field' type='text' name='tags' value=@tags.pluck(:name).join(" ")
-  br
-  label for='collections-field' Collections
-  br
-  textarea id='collections-field' name='collections'
-    = @collections.pluck(:name).join("\n")
-  br
-  input type='submit' value='update'
+- route, name = @nav_opts.values_at(:route, :name)
+
+a style='margin-right: 10px' href='/' root
+a id="prev" style='margin-right: 10px' href="/#{route}?idx=#{@idx == 0 ? @count - 1 : @idx - 1}&media_type=#{@media_type}" prev
+a id="next" style='margin-right: 10px' href="/#{route}?idx=#{@idx == @count - 1 ? 0 : @idx + 1}&media_type=#{@media_type}" next
+a style='margin-right: 10px' href="/#{route}?random=true&media_type=#{@media_type}" random
+
+form action="/#{route}" style="display: inline-block"
+  input type='hidden' name='media_type' value=@media_type
+  input type='number' min=0 max=@count step=1 name='idx' value=@idx
+  input type='submit' value='set idx'
+  
+form style='display: inline; padding-left: 10px' action='/#{route}' method="GET"
+  input type='hidden' name='idx' value=@idx
+  select name='media_type'
+    - ([""] + Item::MEDIA_TYPES).each do |media_type|
+      option{
+        value=media_type
+        selected=(@media_type == media_type)
+      } = media_type
+  input type='submit' value='Filter'
+
+pre = "#{name}\nitem #{@idx + 1} (total: #{@count})\n#{@item&.path}"
+
+- if @item
+  
+  - bulk_action = ("collection" if @from_collection) || ("tag" if @from_tag)
+  - source = (@collection if bulk_action == "collection") || (@tag if bulk_action == "tag")
+  - if bulk_action
+    form action='/bulk_modify_collection' style='display: inline' method="POST"
+      input id='bulk-collection-operation' type='hidden' name='operation' value=''
+      input type='hidden' name='source_type' value=bulk_action
+      input type='hidden' name='source_id' value=source.id
+      input type='text' placeholder='collection' name='collection'
+      input id='bulk-collection-submit' type='submit' style='display: none'
+    button id="bulk-add-collection" Bulk Add
+    button id="bulk-remove-collection" Bulk Remove
+    br
+    br
+    form action='/bulk_modify_tag' style='display: inline' method="POST"
+      input id='bulk-tag-operation' type='hidden' name='operation' value=''
+      input type='hidden' name='source_type' value=bulk_action
+      input type='hidden' name='source_id' value=source.id
+      input type='text' placeholder='tag' name='tag'
+      input id='bulk-tag-submit' type='submit' style='display: none'
+    button id="bulk-add-tag" Bulk Add
+    button id="bulk-remove-tag" Bulk Remove
+    br
+    br
+
+  form action='/item/#{@item.id}/update' method="POST"
+    input type='hidden' value='#{@item.id}'
+    - if @from_tag
+      input type='hidden' name='from_tag' value='#{@tag.name}'
+    - if @from_collection
+      input type='hidden' name='from_collection' value='#{@collection.id}'    
+    label for='tags-field' Tags
+    br
+    input id='tags-field' type='text' name='tags' value=@tags.pluck(:name).join(" ")
+    br
+    label for='collections-field' Collections
+    br
+    input type='text' id='collections-field' name='collections' value=@collections.pluck(:name).join(" ")
+    br
+    input type='submit' value='update'
 br
 
 - if @item
@@ -22,11 +71,40 @@ br
     video controls='true' src="/item/#{@item.id}" height="700px"
   - else
     img src="/item/#{@item.id}" height="700px"
-    
 - else
-  b No more images :(
+  b No items match criteria
 
 javascript:
+
+  document.getElementById("bulk-add-collection").addEventListener('click', function(){
+    document.getElementById("bulk-collection-operation").value = "add"
+    document.getElementById("bulk-collection-submit").click()
+  })
+  document.getElementById("bulk-remove-collection").addEventListener('click', function(){
+    document.getElementById("bulk-collection-operation").value = "remove"
+    document.getElementById("bulk-collection-submit").click()
+  })
+  document.getElementById("bulk-add-tag").addEventListener('click', function(){
+    document.getElementById("bulk-tag-operation").value = "add"
+    document.getElementById("bulk-tag-submit").click()
+  })
+  document.getElementById("bulk-remove-tag").addEventListener('click', function(){
+    document.getElementById("bulk-tag-operation").value = "remove"
+    document.getElementById("bulk-tag-submit").click()
+  })
+
+  document.getElementById('collections-field').addEventListener('focus', function(){
+    localStorage.setItem("focused", "collections-field")
+  });
+  document.getElementById('tags-field').addEventListener('focus', function(){
+    localStorage.setItem("focused", "tags-field")
+  });
+  
+  const focused = localStorage.getItem("focused")
+  if (focused) {
+    document.getElementById(focused).focus()
+  }
+
   document.addEventListener('keypress', function(event) {
     if (event.key == "]") {
       document.querySelector("#next").click()

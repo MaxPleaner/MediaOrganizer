@@ -11,7 +11,7 @@ p
 	  
 
 button type='button' class='big-button collapsible' Tags
-.content
+.content style="display: block"
   - if @tags.any?
     ul style='list-style: none;'
     - @tags.each do |tag|
@@ -22,8 +22,8 @@ button type='button' class='big-button collapsible' Tags
   
 br
 br
-button type='button' class='big-button collapsible' Collections
-.content
+button type='button' class='big-button collapsible active'  Collections
+.content style="display: block"
   - if @collections.any?
     ul style='list-style: none'
     - @collections.each do |collection|
@@ -32,3 +32,4 @@ button type='button' class='big-button collapsible' Collections
   - else
     b no collections yet
 
+div style='height: 400px'

@@ -31,8 +31,10 @@ def standard_image_loader(collection, &blk)
     @idx = params[:idx].presence.to_i || 0
   end
   @item = collection.limit(1).offset(@idx).first
-  @tags = @item.tags
-  @collections = @item.collections
+  if @item
+    @tags = @item.tags
+    @collections = @item.collections
+  end
   blk.call
 end
 
@@ -68,6 +70,52 @@ get '/collection/:id' do
   end
 end
 
+post '/bulk_modify_collection' do
+  operation, source_type, source_id, collection_name = params.values_at(
+    :operation, :source_type, :source_id, :collection
+  )
+  source_class = source_type == "tag" ? Tag : Collection
+  source = source_class.find(source_id.to_i)
+  collection = Collection.find_or_create_by(name: collection_name)
+  source.items.each do |item|
+    if operation == "add"
+      item.items_collections.find_or_create_by(collection: collection)
+    else
+      item.items_collections.find_by(collection: collection)&.destroy
+    end
+  end
+  if operation == "remove" && collection.items.none?
+    collection.destroy
+    if source == collection
+      return redirect '/'
+    end
+  end
+  redirect back
+end
+
+post '/bulk_modify_tag' do
+  operation, source_type, source_id, tag_name = params.values_at(
+    :operation, :source_type, :source_id, :tag
+  )
+  source_class = source_type == "tag" ? Tag : Collection
+  source = source_class.find(source_id.to_i)
+  tag = Tag.find_or_create_by(name: tag_name)
+  source.items.each do |item|
+    if operation == "add"
+      item.items_tags.find_or_create_by(tag: tag)
+    else
+      item.items_tags.find_by(tag: tag)&.destroy
+    end
+  end
+  if operation == "remove" && tag.items.none?
+    tag.destroy
+    if source == tag
+      return redirect '/'
+    end
+  end
+  redirect back
+end
+
 get '/item/:id' do
   @item = Item.find(params[:id])
   send_file @item.path
@@ -96,7 +144,7 @@ post '/item/:id/update' do
     @item.update(dirty: true)
   end
 
-  collection_names = params[:collections].split("\n").reject(&:blank?).map(&:strip)
+  collection_names = params[:collections].split(" ").reject(&:blank?).map(&:strip)
   collection_names.each do |collection_name|
     collection = Collection.find_or_create_by(name: collection_name)
     @item.collections += [collection] unless @item.items_collections.exists?(collection: collection)
