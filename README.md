@@ -6,7 +6,7 @@
 <img src='https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/5b136bb4-beb4-4960-a54d-d1072c602089' width='800px'/>
 
 ### Tag / Collection / Item view
-<img src='https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/b4d7d1c2-bdfc-4e7f-aada-5941ad628f9a' width='800px' />
+<img src='https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/fd7bba6b-4038-442a-bb89-af3a4f71b038' width='800px' />
 
 ---
 
