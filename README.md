@@ -1,9 +1,16 @@
 # Media Organizer
 
-![image](https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/20dfbdc1-c5aa-4411-aece-c0789b9b2902)
-![image](https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/b4d7d1c2-bdfc-4e7f-aada-5941ad628f9a)
+## Screenshots
 
+### Main Menu
+<img src='https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/20dfbdc1-c5aa-4411-aece-c0789b9b2902' width='800px'/>
 
+### Tag / Collection / Item view
+<img src='https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/b4d7d1c2-bdfc-4e7f-aada-5941ad628f9a' width='800px' />
+
+---
+
+## Overview
 
 This is a web-based interface for organizing large amounts of media
 (mainly intended images, though potentially applicable to other things).
