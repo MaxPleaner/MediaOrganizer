@@ -53,3 +53,11 @@ files around the drive right now.
   b. Then run `Scripts.import_files("/path/to/folder")`
   c. This will take a while if you have a lot of media, but it will show you progress as it goes.
 7. run the server (this will use port 9292): `rackup --host 0.0.0.0`
+
+## Notes:
+
+- There are keyboard shortcuts for navigating through items. Use `[` and `]` for previous and next, respectively.
+- The import script will attempt to calculate the persistent hash ("phash") for each item. This can theoretically be used to detect duplicate images,
+  though the app doesn't actually have any UI for this yet. If you don't care about this or encounter difficulties, pass the `calc_phash: false` option to the `Scripts.import_files` call.
+- Both exif and metadata extraction are skipped for files greater than 50 MB.
+- This was developed as a single-user application, e.g. for myself to organize my own image collection (self-hosting the application on a private network). As such, there is no authentication built in.
