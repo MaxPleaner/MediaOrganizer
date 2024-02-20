@@ -71,7 +71,8 @@ class Item < ActiveRecord::Base
   end  
   
   def write_metadata
-    reload
+        reload
+	return unless File.exist?(path)
 	exiftool = MiniExiftool.new(path)
 	tag_names = tags.pluck(:name)
 	tag_names = nil if tag_names.empty?
@@ -98,6 +99,7 @@ class ItemsTag < ActiveRecord::Base
   after_commit :mark_item_dirty, on: [:create, :destroy, :update]
   
   def mark_item_dirty
+    return unless item
     item.update(dirty: true) unless item.dirty
   end
 end
