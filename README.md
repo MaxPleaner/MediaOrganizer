@@ -1,5 +1,8 @@
 # Media Organizer
 
+![image](https://github.com/MaxPleaner/MediaOrganizer/assets/5035719/20dfbdc1-c5aa-4411-aece-c0789b9b2902)
+
+
 This is a web-based interface for organizing large amounts of media
 (mainly intended images, though potentially applicable to other things).
 
