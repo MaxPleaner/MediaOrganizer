@@ -10,6 +10,7 @@ end
 get '/' do
   @tags = Tag.all.sort_by { |tag| tag.name.downcase }
   @collections = Collection.all.sort_by { |collection| collection.name.downcase }
+
   slim :index
 end
 

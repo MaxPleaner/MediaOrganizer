@@ -75,7 +75,7 @@ class Item < ActiveRecord::Base
 	exiftool = MiniExiftool.new(path)
 	tag_names = tags.pluck(:name)
 	tag_names = nil if tag_names.empty?
-	exiftool.keywords = tag_names.uniq
+	exiftool.keywords = tag_names&.uniq
 	exiftool.save
 	update(dirty: false) if dirty
   end
