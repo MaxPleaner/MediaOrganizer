@@ -9,6 +9,18 @@ p
 p
 	a class='big-button' href='/no_collection' No Collection
 	  
+button type='button' class='big-button collapsible active'  Collections
+.content style="display: block"
+  - if @collections.any?
+    ul style='list-style: none'
+    - @collections.each do |collection|
+      li class='collection-link'
+        a class='collection-link-text' href='/collection/#{collection.id}' = "#{collection.name} (#{collection.items_count})"
+  - else
+    b no collections yet
+
+br
+br
 
 button type='button' class='big-button collapsible' Tags
 .content style="display: block"
@@ -19,17 +31,5 @@ button type='button' class='big-button collapsible' Tags
         a class='tag-link-text' href="/tag/#{tag.name}" = tag.name
   - else
     b no tags yet
-  
-br
-br
-button type='button' class='big-button collapsible active'  Collections
-.content style="display: block"
-  - if @collections.any?
-    ul style='list-style: none'
-    - @collections.each do |collection|
-      li class='collection-link'
-        a class='collection-link-text' href='/collection/#{collection.id}' = collection.name
-  - else
-    b no collections yet
 
 div style='height: 400px'

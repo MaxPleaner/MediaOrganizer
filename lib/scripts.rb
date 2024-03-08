@@ -3,7 +3,11 @@ require 'image_hash'
 require 'timeout'
 
 class Scripts
-  def self.import_folder(folder, start_idx: 0, i: -1, calc_phash: true, total_count: nil, recurse: true, update_tags: false, logger: false)
+  def self.import_folder_no_metadata(folder)
+    import_folder(folder, get_tags: false, calc_phash: false)
+  end
+  
+  def self.import_folder(folder, start_idx: 0, i: -1, get_tags: true, calc_phash: true, total_count: nil, recurse: true, update_tags: false, logger: false)
     total_count ||= `find #{folder} -type f | wc -l`.to_i
     set_logger(enabled: logger) do
 		folder = File.expand_path(folder)
@@ -18,7 +22,7 @@ class Scripts
 		  if File.directory?(path)
 			next_folders << path
 		  else
-			Item.import_file(path, update_tags: update_tags, calc_phash: calc_phash)
+			Item.import_file(path, update_tags: update_tags, get_tags: get_tags, calc_phash: calc_phash)
 			print '.'
 		  end
 		  if i % 50 == 0
@@ -37,7 +41,14 @@ class Scripts
   
   def self.undirty_all(logger: false)
     set_logger(enabled: logger) do
-      Item.where(dirty: true).each(&:write_metadata)
+      items = Item.where(dirty: true)
+      count = items.count
+      items.each_with_index do |item, idx|
+        item.write_metadata
+	if idx % 50 == 0
+	  puts "#{idx}/#{count} (#{(100 * idx / count.to_f).round(1)}%)"
+	end
+      end
     end
   end
   

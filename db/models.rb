@@ -7,7 +7,7 @@ class Item < ActiveRecord::Base
   has_many :tags, through: :items_tags
   has_many :collections, through: :items_collections
   
-  def self.import_file(path, update_tags: false, calc_phash: true)
+  def self.import_file(path, update_tags: false, get_tags: true, calc_phash: true)
     parts = path.split("/")
 	return if parts.last == ".DS_Store"
 	return if parts.last.start_with?(".")
@@ -22,7 +22,7 @@ class Item < ActiveRecord::Base
     # since things can freeze up (and timeout won't even handle)
     return if size_mb(item.path) > 50
     
-    item.create_tags if (!exists || update_tags)
+    item.create_tags if get_tags && (!exists || update_tags)
     item.set_phash if calc_phash rescue nil
   end
   
@@ -39,7 +39,7 @@ class Item < ActiveRecord::Base
 		"image"
 	when ".gif", "webm"
 		"gif"
-	when ".avi", "mp4", ".mkv", ".m4v", ".mov"
+	when ".avi", ".mp4", ".mkv", ".m4v", ".mov"
 		"video"
 	else
 		"other"
@@ -71,14 +71,14 @@ class Item < ActiveRecord::Base
   end  
   
   def write_metadata
-        reload
-	return unless File.exist?(path)
-	exiftool = MiniExiftool.new(path)
-	tag_names = tags.pluck(:name)
-	tag_names = nil if tag_names.empty?
-	exiftool.keywords = tag_names&.uniq
-	exiftool.save
-	update(dirty: false) if dirty
+    reload
+    return unless File.exist?(path)
+    exiftool = MiniExiftool.new(path)
+    tag_names = tags.pluck(:name)
+    tag_names = nil if tag_names.empty?
+    exiftool.keywords = tag_names&.uniq
+    exiftool.save
+    update(dirty: false) if dirty
   end
 end
 

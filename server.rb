@@ -9,7 +9,11 @@ end
 
 get '/' do
   @tags = Tag.all.sort_by { |tag| tag.name.downcase }
-  @collections = Collection.all.sort_by { |collection| collection.name.downcase }
+  @collections = Collection
+    .select("collections.*, COUNT(items_collections.id) AS items_count")
+    .left_joins(:items_collections)
+    .group("collections.id")
+    .sort_by { |collection| collection.name.downcase }
 
   slim :index
 end
@@ -117,9 +121,39 @@ post '/bulk_modify_tag' do
   redirect back
 end
 
+def send_video
+  file_size = File.size(@item.path)
+  content_type 'video/mp4'
+  headers "Accept-Ranges" => "bytes",
+          "Content-Length" => file_size.to_s
+  range_header = request.env["HTTP_RANGE"]
+  if range_header
+    range = range_header.split('bytes=')[1].split('-')
+    start_byte = range[0].to_i
+    end_byte = range[1] ? range[1].to_i : file_size - 1
+    headers "Content-Range" => "bytes #{start_byte}-#{end_byte}/#{file_size}",
+            "Content-Length" => (end_byte - start_byte + 1).to_s
+    status 206 # Partial Content
+    stream do |out|
+      File.open(@item.path, 'rb') do |file|
+        file.seek(start_byte)
+        out << file.read(end_byte - start_byte + 1)
+      end
+    end
+  else
+    status 200 # OK
+    stream do |out|
+      File.open(@item.path, 'rb') do |file|
+        out << file.read(1024) until file.eof?
+      end
+    end
+  end
+end
+
 get '/item/:id' do
   @item = Item.find(params[:id])
-  send_file @item.path
+  return send_file(@item.path) unless @item.media_type == "video"
+  send_video
 end
 
 post '/item/:id/update' do

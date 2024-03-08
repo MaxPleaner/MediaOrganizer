@@ -20,10 +20,13 @@ form style='display: inline; padding-left: 10px' action='/#{route}' method="GET"
       } = media_type
   input type='submit' value='Filter'
 
+span style='margin-left: 5px'
+input type='checkbox' id="autonav"
+label for="autonav" automatically go next on update
+
 pre = "#{name}\nitem #{@idx + 1} (total: #{@count})\n#{@item&.path}"
 
 - if @item
-  
   - bulk_action = ("collection" if @from_collection) || ("tag" if @from_tag)
   - source = (@collection if bulk_action == "collection") || (@tag if bulk_action == "tag")
   - if bulk_action
@@ -48,7 +51,7 @@ pre = "#{name}\nitem #{@idx + 1} (total: #{@count})\n#{@item&.path}"
     br
     br
 
-  form action='/item/#{@item.id}/update' method="POST"
+  form id="update-form" action='/item/#{@item.id}/update' method="POST"
     input type='hidden' value='#{@item.id}'
     - if @from_tag
       input type='hidden' name='from_tag' value='#{@tag.name}'
@@ -63,6 +66,14 @@ pre = "#{name}\nitem #{@idx + 1} (total: #{@count})\n#{@item&.path}"
     input type='text' id='collections-field' name='collections' value=@collections.pluck(:name).join(" ")
     br
     input type='submit' value='update'
+    
+  - ["non", "--", "-", "*", "**"].each do |rating|
+    button{
+      class="rate #{"active" if @collections.pluck(:name).include?(rating) }"
+      style="font-size: 1.1em; margin-left: 7px"
+    }= rating
+
+br
 br
 
 - if @item
@@ -73,25 +84,73 @@ br
     img src="/item/#{@item.id}" height="700px"
 - else
   b No items match criteria
+  
+css:
+  button.active {
+    outline: 2px solid pink;
+  }
 
 javascript:
 
-  document.getElementById("bulk-add-collection").addEventListener('click', function(){
-    document.getElementById("bulk-collection-operation").value = "add"
-    document.getElementById("bulk-collection-submit").click()
+  updateForm = document.getElementById("update-form")
+  collections = document.getElementById("collections-field")
+  autonav = document.getElementById("autonav")
+
+  document.querySelectorAll(".rate").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      var val;
+      if (btn.classList.contains("active")) {
+          val = collections.value.split(" ").filter((token) => { return token != btn.textContent }).join(" ")
+      } else {
+          val = collections.value + " " + btn.textContent
+      }
+      collections.value = val
+      setAutoNav()
+      updateForm.submit()
+    })
   })
-  document.getElementById("bulk-remove-collection").addEventListener('click', function(){
-    document.getElementById("bulk-collection-operation").value = "remove"
-    document.getElementById("bulk-collection-submit").click()
+  
+  
+  if (localStorage.getItem("autonav") == 'true') {
+    if (localStorage.getItem("navigated") == 'false') {
+      localStorage.setItem("navigated", true)
+      document.getElementById("next").click()
+    } else {
+      autonav.checked = true
+    }
+  }
+  
+  autonav.addEventListener("change", () => {
+    localStorage.setItem("autonav", autonav.checked)
   })
-  document.getElementById("bulk-add-tag").addEventListener('click', function(){
-    document.getElementById("bulk-tag-operation").value = "add"
-    document.getElementById("bulk-tag-submit").click()
+  
+  function setAutoNav () {
+    localStorage.setItem("autonav", autonav.checked)
+    localStorage.setItem("navigated", false)
+  }
+  
+  updateForm.addEventListener('submit', function(){
+    setAutoNav()
   })
-  document.getElementById("bulk-remove-tag").addEventListener('click', function(){
-    document.getElementById("bulk-tag-operation").value = "remove"
-    document.getElementById("bulk-tag-submit").click()
-  })
+
+  if (document.getElementById("bulk-add-collection")) {
+    document.getElementById("bulk-add-collection").addEventListener('click', function(){
+      document.getElementById("bulk-collection-operation").value = "add"
+      document.getElementById("bulk-collection-submit").click()
+    })
+    document.getElementById("bulk-remove-collection").addEventListener('click', function(){
+      document.getElementById("bulk-collection-operation").value = "remove"
+      document.getElementById("bulk-collection-submit").click()
+    })
+    document.getElementById("bulk-add-tag").addEventListener('click', function(){
+      document.getElementById("bulk-tag-operation").value = "add"
+      document.getElementById("bulk-tag-submit").click()
+    })
+    document.getElementById("bulk-remove-tag").addEventListener('click', function(){
+      document.getElementById("bulk-tag-operation").value = "remove"
+      document.getElementById("bulk-tag-submit").click()
+    })
+  }
 
   document.getElementById('collections-field').addEventListener('focus', function(){
     localStorage.setItem("focused", "collections-field")
