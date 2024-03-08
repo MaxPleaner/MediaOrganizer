@@ -61,13 +61,30 @@ class Item < ActiveRecord::Base
 	end
   end
   
+  def self.bulk_update_phash
+    Scripts.set_logger(enabled: false) do
+      items = Item.where(media_type: "image", phash: nil)
+      count = items.each.with_index do |item, idx|  
+        print "."
+	item.set_phash
+	if idx % 50 == 0
+	  puts "\n#{idx} / #{count}"
+	end
+      end
+    end
+  end
+  
   def set_phash(force_update: false)
     return if phash && !force_update
     hash = nil
     Timeout.timeout(10) do
-      hash = ImageHash.new(path).hash
+      begin
+        hash = ImageHash.new(path).hash
+      rescue => e
+         puts e.class, e.message
+      end
     end rescue puts("#{path} took too long in phash")
-    update(phash: hash)
+    update(phash: hash) if hash
   end  
   
   def write_metadata
